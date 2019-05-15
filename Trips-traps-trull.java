@@ -16,15 +16,19 @@ import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Pos;
+import java.io.*;
+import java.util.Arrays;
+import java.util.List;
+
 //võiks lisada ka skoorihoidja! mis teha tekstist lugemisega??
 public class TripsTrapsTrull extends Application{
 	private String kelleKord = "X"; //selle abi teame, kelle käik on
 	private String kelleKordAjutine = " ";
 	private Ruudustik[][] maatriks = new Ruudustik[3][3]; //
-	private Label label = new Label("X");
-	private Label label1 = new Label("X: "+ 0 + " " + "O: " + 0);
+	private Label kord = new Label("X");
 	private GridPane ruudustik = new GridPane(); //loome Gridi abil ruudustiku	
 	private Stage ajutine = new Stage();
+	private List<Integer> tulemused = Arrays.asList(0, 0, 0);
 	
 	@Override
 	public void start(Stage peaLava) throws Exception {
@@ -37,9 +41,14 @@ public class TripsTrapsTrull extends Application{
 		}
 		
 		BorderPane bpane = new BorderPane();
-		bpane.setAlignment(label, Pos.TOP_CENTER);
+		BorderPane bpane2 = new BorderPane();
+		bpane.setAlignment(kord, Pos.TOP_CENTER);
 		bpane.setCenter(ruudustik);
-		bpane.setTop(label);
+		bpane2.setCenter(kord);
+		bpane.setTop(bpane2);
+		bpane.setStyle("-fx-background-color: #FFFFFF;");
+		bpane2.setStyle("-fx-background-color: #202020;");
+		kord.setTextFill(Color.web("#FFFFFF"));
 		   
 		Scene stseen = new Scene(bpane, 450, 500);
 		peaLava.setTitle("Trips-traps-trull");
@@ -99,12 +108,17 @@ public class TripsTrapsTrull extends Application{
 				if (onVõitnud(kelleKord) || RuudustikOnTäis()) { //kui terve ruudustik on täis, on mäng lõppenud viigiga
 					kelleKordAjutine = kelleKord;
 					if(onVõitnud(kelleKord)) {
-						label.setText(kelleKord + " on võitnud! Mäng on läbi!");
+						kord.setText(kelleKord + " on võitnud! Mäng on läbi!");
+						if (kelleKord.equals("X"))
+							tulemused.set(0, tulemused.get(0) + 1);
+						else
+							tulemused.set(1, tulemused.get(1) + 1);
 						kelleKord = " ";
 					}
 					else {
-						label.setText("Viik! Mäng on läbi!");
-						kelleKord = " "; 
+						kord.setText("Viik! Mäng on läbi!");
+						tulemused.set(2, tulemused.get(2) + 1);
+						kelleKord = " ";
 					}
 					Stage lava = new Stage();
 					Button nupp1 = new Button("Uus mäng");
@@ -139,14 +153,46 @@ public class TripsTrapsTrull extends Application{
 					});
 					nupp2.setOnMouseClicked(new EventHandler<MouseEvent>() {
 						public void handle(MouseEvent me) {
+							String tekst ="X võitude arv: " + tulemused.get(0) + " | O võitude arv: " + tulemused.get(1) + " | Viikide arv: " + tulemused.get(2);
+							try { //üritame tulemused faili kirjutada
+								BufferedWriter bw = new BufferedWriter(new FileWriter("tulemused.txt"));
+								bw.write(tekst);
+								bw.close();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							 //üritame tulemusi failist lugeda, et neid ekraanile kuvada
+							try(BufferedWriter bw = new BufferedWriter(new FileWriter("tulemused.txt")); 
+									BufferedReader br = new BufferedReader(new FileReader("tulemused.txt"))){
+								bw.write(tekst);
+								bw.close();
+								String line = br.readLine();
+								br.close();
+								Stage lavaUus = new Stage();
+								VBox kast = new VBox(10);
+								kast.setStyle("-fx-background-color: #202020;");
+								Label lopp = new Label();
+								lopp.setTextFill(Color.web("#FFFFFF"));
+								lopp.setText(line);
+								kast.setAlignment(Pos.CENTER);
+								kast.getChildren().addAll(lopp);
+								Scene stseen = new Scene(kast, 350, 50);
+								lavaUus.setScene(stseen);
+								lavaUus.show();
+							}
+							 catch (IOException e) {
+								e.printStackTrace();
+							}
+							//System.out.println(tekst);
 							lava.close();
 							ajutine.close();
 						}
 					});
 					VBox vBox = new VBox(10);
+					vBox.setStyle("-fx-background-color: #202020;");
 					vBox.setAlignment(Pos.CENTER);
-					vBox.getChildren().addAll(label, nupp1, nupp2);
-					Scene stseen = new Scene(vBox, 200, 150);
+					vBox.getChildren().addAll(kord, nupp1, nupp2);
+					Scene stseen = new Scene(vBox, 200, 130);
 					lava.setScene(stseen);
 					lava.show();
 		        }
@@ -155,7 +201,7 @@ public class TripsTrapsTrull extends Application{
 		        		kelleKord = "O";
 		        	else if(kelleKord.equals("O"))
 		        		kelleKord = "X";
-		        	label.setText(kelleKord);
+		        	kord.setText(kelleKord);
 		        }
 			}
 		}
@@ -196,18 +242,14 @@ public class TripsTrapsTrull extends Application{
 	}
 	
 	public void cleanUp() {
-		for(int i = 0; i < 3; i++) {
-			for(int j = 0; j < 3; j++) {
-				maatriks[i][j].setmangija(" ");
-			}
-		}
-		ruudustik.getChildren().clear();
+
+		ruudustik.getChildren().clear(); //tühjendame GridPane'i
 		
     	if(kelleKordAjutine.equals("X")) //uuesti alustades alustame sellest, kes kaotas või kes viimase märgi pani
     		kelleKord = "O";
     	else if(kelleKordAjutine.equals("O"))
     		kelleKord = "X";
-		label.setText(kelleKord);
+		kord.setText(kelleKord);
 	}
 	   
 	public static void main(String[] args) {
