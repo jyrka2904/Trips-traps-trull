@@ -1,3 +1,10 @@
+/*
+ * Tegemist on trips-traps-trull mänguga. Iga mängu lõppedes küsitakse kasutajalt,
+ * kas ta soovib uue mängu teha või lõpetada. Uue mängu tegemisel tühjendatakse
+ * antud mängu tulemus. Lõpetades, mäng väljub.
+ * 
+ * Autorid: Jürgen Mikk Jõeleht, Robert Kuks
+ */
 import javafx.event.EventHandler;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -20,28 +27,28 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
-//võiks lisada ka skoorihoidja! mis teha tekstist lugemisega??
 public class TripsTrapsTrull extends Application{
 	private String kelleKord = "X"; //selle abi teame, kelle käik on
 	private String kelleKordAjutine = " ";
-	private Ruudustik[][] maatriks = new Ruudustik[3][3]; //
+	private Ruut[][] maatriks = new Ruut[3][3]; //loome listi Ruut'udest
 	private Label kord = new Label("X");
-	private GridPane ruudustik = new GridPane(); //loome Gridi abil ruudustiku	
-	private Stage ajutine = new Stage();
-	private List<Integer> tulemused = Arrays.asList(0, 0, 0);
+	private GridPane ruudustik = new GridPane(); //loome GridPane'i(ruudustiku loomiseks)	
+	private Stage ajutine = new Stage(); //hiljem
+	private List<Integer> tulemused = Arrays.asList(0, 0, 0); //skoor
 	
 	@Override
 	public void start(Stage peaLava) throws Exception {
 		ajutine = peaLava;
 		for(int i = 0; i < 3; i++){
 			for(int j = 0; j < 3; j++) {
-				//lisame ruudustiku ruudud (3x3) ning loome igale ruudule tema Ruudustiku
-				ruudustik.add(maatriks[i][j] = new Ruudustik(), j, i);
+				//lisame ruudustiku ruudud (3x3) ning loome igale ruudule tema Ruut klassi
+				ruudustik.add(maatriks[i][j] = new Ruut(), j, i);
 			}
 		}
 		
+		//Loome akna
 		BorderPane bpane = new BorderPane();
-		BorderPane bpane2 = new BorderPane();
+		BorderPane bpane2 = new BorderPane(); 
 		bpane.setAlignment(kord, Pos.TOP_CENTER);
 		bpane.setCenter(ruudustik);
 		bpane2.setCenter(kord);
@@ -49,20 +56,19 @@ public class TripsTrapsTrull extends Application{
 		bpane.setStyle("-fx-background-color: #FFFFFF;");
 		bpane2.setStyle("-fx-background-color: #202020;");
 		kord.setTextFill(Color.web("#FFFFFF"));
-		   
 		Scene stseen = new Scene(bpane, 450, 500);
 		peaLava.setTitle("Trips-traps-trull");
 		peaLava.setScene(stseen);
 		peaLava.show();
 	}	
 		
-	public class Ruudustik extends Pane {
+	public class Ruut extends Pane {
 		 
 		private String mangija = " "; //hetke mängija
 
-		public Ruudustik() {		      
+		public Ruut() {		      
 			setPrefSize(500, 500);
-			setStyle("-fx-border-color: black"); //määrame ruudustiku värvi
+			setStyle("-fx-border-color: black"); //määrame ruudustiku joonte värvi
 			setOnMouseClicked(e -> handleMouseClick()); //kui vajutame antud ruutu
 		}
 		    
@@ -102,14 +108,14 @@ public class TripsTrapsTrull extends Application{
 		}
 		   
 		private void handleMouseClick() {
-			if (mangija.isBlank() && !kelleKord.isBlank()) {// Kui ruut on tühi ning mäng pole läbi
+			if (mangija.isBlank() && !kelleKord.isBlank()) {// Kui ruut on tühi ning mäng pole läbi, kujutame ruudustiku antud ruutu X-i või O
 				setMangija(kelleKord); 
 				
 				if (onVõitnud(kelleKord) || RuudustikOnTäis()) { //kui terve ruudustik on täis, on mäng lõppenud viigiga
 					kelleKordAjutine = kelleKord;
 					if(onVõitnud(kelleKord)) {
 						kord.setText(kelleKord + " on võitnud! Mäng on läbi!");
-						if (kelleKord.equals("X"))
+						if (kelleKord.equals("X")) //muudame skoori
 							tulemused.set(0, tulemused.get(0) + 1);
 						else
 							tulemused.set(1, tulemused.get(1) + 1);
@@ -117,15 +123,16 @@ public class TripsTrapsTrull extends Application{
 					}
 					else {
 						kord.setText("Viik! Mäng on läbi!");
-						tulemused.set(2, tulemused.get(2) + 1);
+						tulemused.set(2, tulemused.get(2) + 1); //muudame skoori
 						kelleKord = " ";
 					}
+					//küsime kasutajalt, kas tahab uuesti mängida või lõpetada
 					Stage lava = new Stage();
 					Button nupp1 = new Button("Uus mäng");
 					Button nupp2 = new Button("Lõpeta");
-					nupp1.setOnMouseClicked(new EventHandler<MouseEvent>() { 
+					nupp1.setOnMouseClicked(new EventHandler<MouseEvent>() { //uus mäng
 						public void handle(MouseEvent me) {
-							cleanUp();
+							cleanUp(); //uue mängu puhul tühjendame GridPanei ning alustame uue pealavaga
 							lava.close();
 							ajutine.close();
 							try {
@@ -136,7 +143,7 @@ public class TripsTrapsTrull extends Application{
 							}
 						}
 					});
-					nupp1.setOnKeyPressed(new EventHandler<KeyEvent>() {
+					nupp1.setOnKeyPressed(new EventHandler<KeyEvent>() { //uus mäng
 						public void handle(KeyEvent ke) {
 							if(ke.getCode() == KeyCode.ENTER) {
 								cleanUp();
@@ -151,9 +158,9 @@ public class TripsTrapsTrull extends Application{
 							}
 						}
 					});
-					nupp2.setOnMouseClicked(new EventHandler<MouseEvent>() {
+					nupp2.setOnMouseClicked(new EventHandler<MouseEvent>() { //lõpeta
 						public void handle(MouseEvent me) {
-							String tekst ="X võitude arv: " + tulemused.get(0) + " | O võitude arv: " + tulemused.get(1) + " | Viikide arv: " + tulemused.get(2);
+							String tekst ="X võitude arv: " + tulemused.get(0) + " | O võitude arv: " + tulemused.get(1) + " | Viikide arv: " + tulemused.get(2); //lõpuskoor
 							try { //üritame tulemused faili kirjutada
 								BufferedWriter bw = new BufferedWriter(new FileWriter("tulemused.txt"));
 								bw.write(tekst);
@@ -168,6 +175,8 @@ public class TripsTrapsTrull extends Application{
 								bw.close();
 								String line = br.readLine();
 								br.close();
+								
+								//kuvame uue kastina tulemuse
 								Stage lavaUus = new Stage();
 								VBox kast = new VBox(10);
 								kast.setStyle("-fx-background-color: #202020;");
@@ -196,7 +205,7 @@ public class TripsTrapsTrull extends Application{
 					lava.setScene(stseen);
 					lava.show();
 		        }
-		        else { //muul juhul vahetame kelle kord on 
+		        else { //muul juhul vahetame, kelle kord on 
 		        	if(kelleKord.equals("X"))
 		        		kelleKord = "O";
 		        	else if(kelleKord.equals("O"))
